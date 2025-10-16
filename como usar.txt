@@ -20,6 +20,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 winget install Python.PythonInstallManager
 pymanager install 3.10
 py -3.10 -m venv venv310
-cmd /k .\venv310\Scripts\activate 
+.\venv310\Scripts\activate 
 pip install mediapipe opencv-python
 pip install pygame
