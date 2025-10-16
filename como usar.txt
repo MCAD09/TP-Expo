@@ -1,0 +1,25 @@
+# EJECUTAR ESTOS COMANDOS UNO POR UNO, ESPERANDO A QUE ACABE EL PRIMERO PARA
+# EJECUTAR EL SIGUIENTE
+################################
+##### Al abrir el proyecto #####
+################################
+# Una vez configurado (ver abajo), siempre ejecutar este comando al abrir una terminal:
+
+.\venv310\Scripts\activate
+
+
+
+
+
+###########################################
+##### Configurar todo por primera vez #####
+###########################################
+# Instalar Python (tendras que hacerlo con este método) y crear el entorno virtual:
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+winget install Python.PythonInstallManager
+pymanager install 3.10
+py -3.10 -m venv venv310
+cmd /k .\venv310\Scripts\activate 
+pip install mediapipe opencv-python
+pip install pygame
