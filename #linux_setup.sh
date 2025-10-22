@@ -1,6 +1,0 @@
-# Requiere Nix
-nix-shell -p python310Full
-python3 -m venv venv310
-./venv310/bin/activate
-./venv310/bin/pip install mediapipe opencv-python
-./venv310/bin/pip install pygame
