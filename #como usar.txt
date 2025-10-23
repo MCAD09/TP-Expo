@@ -18,6 +18,8 @@
 
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 winget install Python.PythonInstallManager
+
+# Espera un rato puede que tarde en terminar de instalarse aunque parezca que ya ha acabado
 pymanager install 3.10
 py -3.10 -m venv venv310
 .\venv310\Scripts\activate 
