@@ -27,12 +27,17 @@ except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
     pygame.quit()
 
-# --- Elementos del juego (j de juego) ---
+# --- Elementos del juego (j de juego) (d de debug) ---
 j_cam_x = 0
 j_cam_y = 0
 j_chao_pos_x = [10]
 j_chao_pos_y = [10]
 j_chao_sprite = ["chao_normal"]
+jd_collision_x = []
+jd_collision_y = []
+jd_collision_w = [] #ancho
+jd_collision_h = [] #alto
+jd_collision_c = [] #color
 
 # --- Cámara de la compu (c de captura) (r de resultados) ---
 c_cv_cap = cv2.VideoCapture(0)
@@ -70,8 +75,23 @@ def capt():
     global c_cv_image
     global j_chao_sprite
     global m_sprites
+    global jd_collision_x
+    global jd_collision_y
+    global jd_collision_w
+    global jd_collision_h
+
+    jd_collision_w.clear()
+    jd_collision_h.clear()
+    jd_collision_x.clear()
+    jd_collision_y.clear()
 
     personaje_rect = m_sprites[j_chao_sprite[0]].get_rect(center=(50, m_screen_size_y // 2))
+    
+    jd_collision_x.append(personaje_rect.x)
+    jd_collision_y.append(personaje_rect.y)
+    jd_collision_w.append(personaje_rect.w)
+    jd_collision_h.append(personaje_rect.h)
+    jd_collision_c.append((255,255,0,150))
 
     exito, c_cv_image = c_cv_cap.read()
     if not exito:
@@ -87,9 +107,17 @@ def capt():
         # Obtener la posición de la punta del dedo índice en la vista de la cámara (para dibujar el toque)
         touch_x, touch_y = CAPT_convertir2pos(results.multi_hand_landmarks[0])
         
-        touch_radius = 25
+        touch_radius = 10
+        
         touch_rect = pygame.Rect(touch_x - touch_radius, touch_y - touch_radius, 
                                  touch_radius * 2, touch_radius * 2)
+        jd_collision_x.append(touch_x - touch_radius)
+        jd_collision_y.append(touch_y - touch_radius)
+        jd_collision_w.append(touch_radius * 2)
+        jd_collision_h.append(touch_radius * 2)
+        jd_collision_c.append((255,0,0,150))
+
+        
 
         if touch_rect.colliderect(personaje_rect):
             is_touching = True
@@ -128,6 +156,10 @@ def render ():
     # --- Chaos ---
     for i in range(len(j_chao_pos_x)):
         m_screen.blit(m_sprites[j_chao_sprite[i]], (j_chao_pos_x[i] - j_cam_x,j_chao_pos_y[i] - j_cam_y))
+
+    for i in range(len(jd_collision_x)):
+        pygame.draw.rect(m_screen,jd_collision_c[i],(jd_collision_x[i],jd_collision_y[i],
+                                                     jd_collision_w[i],jd_collision_h[i]))
 
     pygame.display.flip()
 
