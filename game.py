@@ -1,18 +1,30 @@
+#################################
+####### NOTAS IMPORTANTES #######
+#################################
+# --- 1. Variables  globales ---
+""" Para *modificar* una de las variables principales desde una
+    función (def) se necesita establescer que la variable es 
+    "global" al inicio de la función utilizando:
+
+        global nombre_de_la_variable
+
+    Si no, el cambio no se realizará. 
+"""
+
+#####################################
+####### VARIABLES PRINCIPALES #######
+#####################################
 import pygame
 import os
 import cv2
 import math
 import mediapipe as mp
 
-#####################################
-####### VARIABLES PRINCIPALES #######
-#####################################
 # --- Configura el motor (m de motor) ---
 pygame.init()
 m_screen_flags = pygame.SCALED | pygame.FULLSCREEN
 m_screen_size_x = 176
 m_screen_size_y = int(math.floor(m_screen_size_x/9*16))
-#m_screen_gamehalf_y = int(math.floor(m_screen_size_x/3*4))
 m_screen_gamehalf_y = int(math.floor(m_screen_size_x/9*16))
 m_screen = pygame.display.set_mode((m_screen_size_x, m_screen_size_y), m_screen_flags)
 m_running = True
@@ -27,17 +39,22 @@ except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
     pygame.quit()
 
+# --- Valores predeterminados (v de valor) ---
+v_chao_hitsize_x = 20
+v_chao_hitsize_y = 23
+v_chao_hitoffset_x = 3
+v_chao_hitoffset_y = 3
+
 # --- Elementos del juego (j de juego) (d de debug) ---
-j_cam_x = 0
-j_cam_y = 0
-j_chao_pos_x = [10]
-j_chao_pos_y = [10]
+j_cam_x = 0.00
+j_cam_y = 0.00
+j_chao_pos_x = [10.00]
+j_chao_pos_y = [10.00]
 j_chao_sprite = ["chao_normal"]
-jd_collision_x = []
-jd_collision_y = []
-jd_collision_w = [] #ancho
-jd_collision_h = [] #alto
+j_chao_rect = [(0,0,0,0)]
+jd_collision_rect = []
 jd_collision_c = [] #color
+jd_enable_hitboxes = False
 
 # --- Cámara de la compu (c de captura) (r de resultados) ---
 c_cv_cap = cv2.VideoCapture(0)
@@ -75,29 +92,15 @@ def capt():
     global c_cv_image
     global j_chao_sprite
     global m_sprites
-    global jd_collision_x
-    global jd_collision_y
-    global jd_collision_w
-    global jd_collision_h
+    global jd_collision_rect
+    global jd_collision_c
 
-    jd_collision_w.clear()
-    jd_collision_h.clear()
-    jd_collision_x.clear()
-    jd_collision_y.clear()
-
-    personaje_rect = m_sprites[j_chao_sprite[0]].get_rect(center=(50, m_screen_size_y // 2))
-    
-    jd_collision_x.append(personaje_rect.x)
-    jd_collision_y.append(personaje_rect.y)
-    jd_collision_w.append(personaje_rect.w)
-    jd_collision_h.append(personaje_rect.h)
-    jd_collision_c.append((255,255,0,150))
+    jd_collision_rect.clear()
+    jd_collision_c.clear()
 
     exito, c_cv_image = c_cv_cap.read()
     if not exito:
-        m_running = False
-        # Si no hay una cámara el juego crashea, en otras palabras, 
-        # si esta línea de código llega a ejecutarse me pego un tiro.
+        m_running = False # Si no hay una cámara, el juego crashea
 
     cv_image = cv2.flip(c_cv_image, 1) # Volteo para consistencia de coordenadas
     cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
@@ -111,15 +114,10 @@ def capt():
         
         touch_rect = pygame.Rect(touch_x - touch_radius, touch_y - touch_radius, 
                                  touch_radius * 2, touch_radius * 2)
-        jd_collision_x.append(touch_x - touch_radius)
-        jd_collision_y.append(touch_y - touch_radius)
-        jd_collision_w.append(touch_radius * 2)
-        jd_collision_h.append(touch_radius * 2)
-        jd_collision_c.append((255,0,0,150))
+        jd_collision_rect.append(touch_rect)
+        jd_collision_c.append((255,0,0,50))        
 
-        
-
-        if touch_rect.colliderect(personaje_rect):
+        if touch_rect.colliderect(j_chao_rect[0]):
             is_touching = True
             j_chao_sprite[0] = "chao_punched"
         else:
@@ -128,18 +126,11 @@ def capt():
 
 
 
-
-
 ##########################
 ####### RENDERIZAR #######
 ##########################
 def render ():
     global m_screen
-    global j_chao_pos_x
-    global j_chao_pos_y
-    global j_chao_sprite
-    global m_sprites
-    global c_cv_image
 
     # --- Fondo ---
     m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
@@ -155,16 +146,38 @@ def render ():
 
     # --- Chaos ---
     for i in range(len(j_chao_pos_x)):
+        if jd_enable_hitboxes:
+            pygame.draw.rect(m_screen,(0,0,255,50),j_chao_rect[i])
         m_screen.blit(m_sprites[j_chao_sprite[i]], (j_chao_pos_x[i] - j_cam_x,j_chao_pos_y[i] - j_cam_y))
 
-    for i in range(len(jd_collision_x)):
-        pygame.draw.rect(m_screen,jd_collision_c[i],(jd_collision_x[i],jd_collision_y[i],
-                                                     jd_collision_w[i],jd_collision_h[i]))
+    if jd_enable_hitboxes:
+        for i in range(len(jd_collision_rect)):
+            pygame.draw.rect(m_screen,jd_collision_c[i],jd_collision_rect[i])
 
     pygame.display.flip()
 
 
 
+###################################
+####### LÓGICA DE LOS CHAOS #######
+###################################
+def chao_logic():
+    global j_cam_x
+    global j_cam_y
+    global j_chao_pos_x
+    global j_chao_pos_y
+    global j_chao_rect
+
+    j_chao_pos_x[0] += 2
+    j_cam_x += 1
+
+
+    # --- Recalcular las hitboxes ---
+    for i in range(len(j_chao_pos_x)):
+        j_chao_rect[i] = (j_chao_pos_x[i] + v_chao_hitoffset_x - j_cam_x,
+                          j_chao_pos_y[i] + v_chao_hitoffset_y - j_cam_y,
+                          v_chao_hitsize_x,v_chao_hitsize_y)
+    
 
 ####################
 ####### MAIN #######
@@ -176,15 +189,15 @@ while m_running:
             m_running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                running = False
+                m_running = False
+            if event.key == pygame.K_z:
+                jd_enable_hitboxes = not jd_enable_hitboxes
 
     # --- Antes del frame ---
     capt()
 
     # --- Loop de juego ---
-    #j_chao_pos_x[0] += 10
-
-
+    chao_logic()
 
     # --- Despues del frame ---
     render()
