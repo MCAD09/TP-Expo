@@ -1,6 +1,5 @@
 venv310/
-.venv/
-.idea/
 **.png~
 **.kra~
 **.log
+__pycache__
