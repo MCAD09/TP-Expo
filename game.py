@@ -44,12 +44,16 @@ v_chao_hitsize_x = 20
 v_chao_hitsize_y = 23
 v_chao_hitoffset_x = 3
 v_chao_hitoffset_y = 3
+v_minspeed2hit = 10
+v_hitmultiplier = 1.2
 
 # --- Elementos del juego (j de juego) (d de debug) ---
 j_cam_x = 0.00
 j_cam_y = 0.00
 j_chao_pos_x = [10.00]
 j_chao_pos_y = [10.00]
+j_chao_vel_x = [10.00]
+j_chao_vel_y = [10.00]
 j_chao_sprite = ["chao_normal"]
 j_chao_rect = [(0,0,0,0)]
 jd_collision_rect = []
@@ -70,6 +74,8 @@ r_hands = c_mp_hands.Hands(
     min_detection_confidence=0.7,
     min_tracking_confidence=0.5
 )
+previous_touch_x = 25
+previous_touch_y = 25
 
 
 
@@ -91,9 +97,13 @@ def capt():
     global c_cv_cap
     global c_cv_image
     global j_chao_sprite
+    global j_chao_vel_x
+    global j_chao_vel_y
     global m_sprites
     global jd_collision_rect
     global jd_collision_c
+    global previous_touch_x
+    global previous_touch_y
 
     jd_collision_rect.clear()
     jd_collision_c.clear()
@@ -110,7 +120,7 @@ def capt():
         # Obtener la posición de la punta del dedo índice en la vista de la cámara (para dibujar el toque)
         touch_x, touch_y = CAPT_convertir2pos(results.multi_hand_landmarks[0])
         
-        touch_radius = 10
+        touch_radius = 25
         
         touch_rect = pygame.Rect(touch_x - touch_radius, touch_y - touch_radius, 
                                  touch_radius * 2, touch_radius * 2)
@@ -120,9 +130,20 @@ def capt():
         if touch_rect.colliderect(j_chao_rect[0]):
             is_touching = True
             j_chao_sprite[0] = "chao_punched"
+            if not previous_touch_x == -99999:
+                if abs(touch_x - previous_touch_x) > v_minspeed2hit:
+                    j_chao_vel_x[0] += (touch_x - previous_touch_x) * v_hitmultiplier
+                if abs(touch_y - previous_touch_y) > v_minspeed2hit:
+                    j_chao_vel_y[0] += (touch_y - previous_touch_y) * v_hitmultiplier
         else:
             is_touching = False
             j_chao_sprite[0] = "chao_normal"
+
+        previous_touch_x = touch_x
+        previous_touch_y = touch_y
+    else:
+        previous_touch_x = -99999
+        previous_touch_y = -99999
 
 
 
@@ -166,14 +187,28 @@ def chao_logic():
     global j_cam_y
     global j_chao_pos_x
     global j_chao_pos_y
+    global j_chao_vel_x
+    global j_chao_vel_y
     global j_chao_rect
 
-    j_chao_pos_x[0] += 2
-    j_cam_x += 1
 
-
-    # --- Recalcular las hitboxes ---
+    # --- Actualizar los chaos ---
     for i in range(len(j_chao_pos_x)):
+        j_chao_vel_x[i] += (0 - j_chao_vel_x[i])/10
+        j_chao_vel_y[i] += (0 - j_chao_vel_y[i])/10
+
+        j_chao_pos_x[i] += j_chao_vel_x[i]
+        j_chao_pos_y[i] += j_chao_vel_y[i]
+
+        if j_chao_pos_x[i] < 0 or j_chao_pos_x[i] > m_screen_size_x-v_chao_hitsize_x:
+            j_chao_pos_x[i] -= j_chao_vel_x[i]
+            j_chao_vel_x[i] *= -1
+        if j_chao_pos_y[i] < 0 or j_chao_pos_y[i] > m_screen_size_y-v_chao_hitsize_y:
+            j_chao_pos_y[i] -= j_chao_vel_y[i]
+            j_chao_vel_y[i] *= -1
+
+        
+        # --- Recalcular las hitboxes ---
         j_chao_rect[i] = (j_chao_pos_x[i] + v_chao_hitoffset_x - j_cam_x,
                           j_chao_pos_y[i] + v_chao_hitoffset_y - j_cam_y,
                           v_chao_hitsize_x,v_chao_hitsize_y)
@@ -201,7 +236,7 @@ while m_running:
 
     # --- Despues del frame ---
     render()
-    m_clock.tick(30)
+    m_clock.tick(60)
 
 # Liberar recursos
 c_cv_cap.release()
