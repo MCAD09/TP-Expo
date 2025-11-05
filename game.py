@@ -23,7 +23,7 @@ import mediapipe as mp
 # --- Configura el motor (m de motor) ---
 pygame.init()
 m_screen_flags = pygame.SCALED | pygame.FULLSCREEN
-m_screen_size_x = 176
+m_screen_size_x = 1080
 m_screen_size_y = int(math.floor(m_screen_size_x/9*16))
 m_screen_gamehalf_y = int(math.floor(m_screen_size_x/9*16))
 m_screen = pygame.display.set_mode((m_screen_size_x, m_screen_size_y), m_screen_flags)
@@ -31,31 +31,32 @@ m_running = True
 m_clock = pygame.time.Clock()
 try:
     m_sprites = { # Carga los sprites a la memoria
-        "pasto" : pygame.image.load(os.path.join('sprites', 'Crab_pool.png')).convert_alpha(),
-        "chao_normal" : pygame.image.load(os.path.join('sprites', 'chao', 'Chao.png')).convert_alpha(),
-        "chao_punched" : pygame.image.load(os.path.join('sprites', 'chao', 'Chao_punched.png')).convert_alpha()
+        "pasto" : pygame.image.load(os.path.join('sprites', 'fondo.png')).convert_alpha(),
+        "chao_normal" : pygame.image.load(os.path.join('sprites', 'Chao.png')).convert_alpha(),
+        "chao_punched" : pygame.image.load(os.path.join('sprites', 'Chao_punched.png')).convert_alpha()
     }
 except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
     pygame.quit()
 
 # --- Valores predeterminados (v de valor) ---
-v_chao_hitsize_x = 20
-v_chao_hitsize_y = 23
-v_chao_hitoffset_x = 3
-v_chao_hitoffset_y = 3
+v_chao_hitsize_x = 80
+v_chao_hitsize_y = 80
 v_minspeed2hit = 10
-v_hitmultiplier = 1.2
+v_hitmultiplier = 0.5
+v_slowdown = 0.8
+v_touch_radius = 80
 
 # --- Elementos del juego (j de juego) (d de debug) ---
 j_cam_x = 0.00
 j_cam_y = 0.00
-j_chao_pos_x = [10.00]
-j_chao_pos_y = [10.00]
-j_chao_vel_x = [10.00]
-j_chao_vel_y = [10.00]
+j_chao_pos_x = [m_screen_size_x/2]
+j_chao_pos_y = [m_screen_size_y/2]
+j_chao_vel_x = [0.00]
+j_chao_vel_y = [0.00]
 j_chao_sprite = ["chao_normal"]
 j_chao_rect = [(0,0,0,0)]
+j_mult = 1
 jd_collision_rect = []
 jd_collision_c = [] #color
 jd_enable_hitboxes = False
@@ -99,6 +100,7 @@ def capt():
     global j_chao_sprite
     global j_chao_vel_x
     global j_chao_vel_y
+    global j_mult
     global m_sprites
     global jd_collision_rect
     global jd_collision_c
@@ -120,21 +122,21 @@ def capt():
         # Obtener la posición de la punta del dedo índice en la vista de la cámara (para dibujar el toque)
         touch_x, touch_y = CAPT_convertir2pos(results.multi_hand_landmarks[0])
         
-        touch_radius = 25
         
-        touch_rect = pygame.Rect(touch_x - touch_radius, touch_y - touch_radius, 
-                                 touch_radius * 2, touch_radius * 2)
+        touch_rect = pygame.Rect(touch_x - v_touch_radius, touch_y - v_touch_radius, 
+                                 v_touch_radius * 2, v_touch_radius * 2)
         jd_collision_rect.append(touch_rect)
         jd_collision_c.append((255,0,0,50))        
 
         if touch_rect.colliderect(j_chao_rect[0]):
             is_touching = True
             j_chao_sprite[0] = "chao_punched"
+            j_mult += 1
             if not previous_touch_x == -99999:
                 if abs(touch_x - previous_touch_x) > v_minspeed2hit:
-                    j_chao_vel_x[0] += (touch_x - previous_touch_x) * v_hitmultiplier
+                    j_chao_vel_x[0] += (touch_x - previous_touch_x) * v_hitmultiplier * j_mult
                 if abs(touch_y - previous_touch_y) > v_minspeed2hit:
-                    j_chao_vel_y[0] += (touch_y - previous_touch_y) * v_hitmultiplier
+                    j_chao_vel_y[0] += (touch_y - previous_touch_y) * v_hitmultiplier * j_mult
         else:
             is_touching = False
             j_chao_sprite[0] = "chao_normal"
@@ -194,8 +196,8 @@ def chao_logic():
 
     # --- Actualizar los chaos ---
     for i in range(len(j_chao_pos_x)):
-        j_chao_vel_x[i] += (0 - j_chao_vel_x[i])/10
-        j_chao_vel_y[i] += (0 - j_chao_vel_y[i])/10
+        j_chao_vel_x[i] += (0 - j_chao_vel_x[i])/40
+        j_chao_vel_y[i] += (0 - j_chao_vel_y[i])/40
 
         j_chao_pos_x[i] += j_chao_vel_x[i]
         j_chao_pos_y[i] += j_chao_vel_y[i]
@@ -203,14 +205,16 @@ def chao_logic():
         if j_chao_pos_x[i] < 0 or j_chao_pos_x[i] > m_screen_size_x-v_chao_hitsize_x:
             j_chao_pos_x[i] -= j_chao_vel_x[i]
             j_chao_vel_x[i] *= -1
-        if j_chao_pos_y[i] < 0 or j_chao_pos_y[i] > m_screen_size_y-v_chao_hitsize_y:
+            j_chao_vel_x[i] *= v_slowdown
+        if j_chao_pos_y[i] < 24 or j_chao_pos_y[i] > m_screen_size_y-v_chao_hitsize_y-24:
             j_chao_pos_y[i] -= j_chao_vel_y[i]
             j_chao_vel_y[i] *= -1
+            j_chao_vel_y[i] *= v_slowdown
 
         
         # --- Recalcular las hitboxes ---
-        j_chao_rect[i] = (j_chao_pos_x[i] + v_chao_hitoffset_x - j_cam_x,
-                          j_chao_pos_y[i] + v_chao_hitoffset_y - j_cam_y,
+        j_chao_rect[i] = (j_chao_pos_x[i] - j_cam_x,
+                          j_chao_pos_y[i] - j_cam_y,
                           v_chao_hitsize_x,v_chao_hitsize_y)
     
 
