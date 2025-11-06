@@ -24,6 +24,7 @@ import mediapipe as mp
 pygame.init()
 m_screen_flags = pygame.SCALED | pygame.FULLSCREEN
 m_screen_size_x = 1080
+#m_screen_size_x = 540
 m_screen_size_y = int(math.floor(m_screen_size_x/9*16))
 m_screen_gamehalf_y = int(math.floor(m_screen_size_x/9*16))
 m_screen = pygame.display.set_mode((m_screen_size_x, m_screen_size_y), m_screen_flags)
@@ -42,9 +43,9 @@ except pygame.error as e:
 # --- Valores predeterminados (v de valor) ---
 v_chao_hitsize_x = 80
 v_chao_hitsize_y = 80
-v_friction = 20
+v_friction = 10
 v_minspeed2hit = 40
-v_hitmultiplier = 0.1
+v_hitmultiplier = 0.2
 v_slowdown = 0.7
 v_touch_radius = 80
 
@@ -63,6 +64,8 @@ j_p2 = 0
 jd_collision_rect = []
 jd_collision_c = [] #color
 jd_enable_hitboxes = False
+jd_fps = 30
+j_inttimer = 15
 
 def reset():
     global j_chao_pos_x
@@ -70,12 +73,16 @@ def reset():
     global j_chao_vel_x
     global j_chao_vel_y
     global j_mult
+    global j_inttimer
 
     j_chao_pos_x = [(m_screen_size_x-v_chao_hitsize_x)/2]
     j_chao_pos_y = [(m_screen_size_y-v_chao_hitsize_y)/2]
     j_chao_vel_x = [0.00]
     j_chao_vel_y = [0.00]
     j_mult = 1
+    j_inttimer = 30
+
+
 
 # --- Animaciones ---
 a_p1num = 120.0
@@ -195,14 +202,15 @@ def render ():
     # --- Fondo ---
     m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
 
-    # --- Cámara ---
-    cv_image = cv2.flip(c_cv_image, 1) 
-    cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-    cv_image = cv_image.swapaxes(0, 1)
-    cv_image = pygame.surfarray.make_surface(cv_image)
-    cv_image = pygame.transform.scale(cv_image, (c_cv_cap_w, c_cv_cap_h))
-    cv_image.set_alpha(20)
-    m_screen.blit(cv_image, (0, 0))
+    if j_inttimer < 1 and False:
+        # --- Cámara ---
+        cv_image = cv2.flip(c_cv_image, 1)
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        cv_image = cv_image.swapaxes(0, 1)
+        cv_image = pygame.surfarray.make_surface(cv_image)
+        cv_image = pygame.transform.scale(cv_image, (c_cv_cap_w, c_cv_cap_h))
+        cv_image.set_alpha(20)
+        m_screen.blit(cv_image, (0, 0))
 
     # --- Chaos ---
     for i in range(len(j_chao_pos_x)):
@@ -215,12 +223,15 @@ def render ():
             pygame.draw.rect(m_screen,jd_collision_c[i],jd_collision_rect[i])
 
     # --- UI ---
-    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(j_mult),1,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
-    m_screen.blit(pygame.font.Font(None,int(a_p1num)).render(str(j_p1),1,(0,0,0)), (m_screen_size_x/2, m_screen_size_y/5*1))
-    m_screen.blit(pygame.font.Font(None,int(a_p2num)).render(str(j_p2),1,(0,0,0)), (m_screen_size_x/2, m_screen_size_y/5*4))
-    a_p1num += (120 - a_p1num)/1.4
-    a_p2num += (120 - a_p2num)/1.4
+    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(j_mult),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
+    m_screen.blit(pygame.font.Font(None,int(a_p1num)).render(str(j_p1),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*1-10))
+    m_screen.blit(pygame.font.Font(None,int(a_p2num)).render(str(j_p2),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*4-10))
+    a_p1num += (120 - a_p1num)/4
+    a_p2num += (120 - a_p2num)/4
     a_vel += (80 - a_vel)/1.4
+    if j_inttimer > 0:
+        m_screen.blit(pygame.font.Font(None,400).render(str(int(j_inttimer/5)+1),0,(0,0,0)), (m_screen_size_x/2-60, m_screen_size_y/2-100))
+    m_screen.blit(pygame.font.Font(None,100).render(str(jd_fps),0,(0,255,0)), (0,0))
 
 
     pygame.display.flip()
@@ -243,8 +254,8 @@ def chao_logic():
     global a_p1num
     global a_p2num
 
-    arco1 = pygame.Rect(383,0,315,24)
-    arco2 = pygame.Rect(383,1920-24,315,24)
+    arco1 = pygame.Rect(420,0,260,24)
+    arco2 = pygame.Rect(420,1896,260,24)
     jd_collision_rect.append(arco1)
     jd_collision_c.append((255,0,255,50))
     jd_collision_rect.append(arco2)
@@ -312,15 +323,21 @@ while m_running:
             if event.key == pygame.K_z:
                 jd_enable_hitboxes = not jd_enable_hitboxes
 
-    # --- Antes del frame ---
-    capt()
+    if j_inttimer < 1:
+        # --- Antes del frame ---
+        capt()
 
-    # --- Loop de juego ---
-    chao_logic()
-
+        # --- Loop de juego ---
+        chao_logic()
+        
     # --- Despues del frame ---
     render()
-    m_clock.tick(60)
+    jd_fps = int(1 / (m_clock.tick(30) / 1000))
+
+    if j_inttimer > 0:
+        j_inttimer -= 1
+    
+
 
 # Liberar recursos
 c_cv_cap.release()
