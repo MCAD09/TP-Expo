@@ -23,10 +23,9 @@ import mediapipe as mp
 # --- Configura el motor (m de motor) ---
 pygame.init()
 m_screen_flags = pygame.SCALED | pygame.FULLSCREEN
-m_screen_size_x = 1080
-#m_screen_size_x = 540
+#m_screen_size_x = 1080
+m_screen_size_x = 360
 m_screen_size_y = int(math.floor(m_screen_size_x/9*16))
-m_screen_gamehalf_y = int(math.floor(m_screen_size_x/9*16))
 m_screen = pygame.display.set_mode((m_screen_size_x, m_screen_size_y), m_screen_flags)
 m_running = True
 m_clock = pygame.time.Clock()
