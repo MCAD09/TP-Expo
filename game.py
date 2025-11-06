@@ -43,7 +43,7 @@ except pygame.error as e:
 v_chao_hitsize_x = 80
 v_chao_hitsize_y = 80
 v_friction = 20
-v_minspeed2hit = 20
+v_minspeed2hit = 40
 v_hitmultiplier = 0.1
 v_slowdown = 0.7
 v_touch_radius = 80
@@ -94,11 +94,10 @@ r_hands = c_mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=4,
     min_detection_confidence=0.7,
-    min_tracking_confidence=0.2
+    min_tracking_confidence=0.4
 )
 previous_touch_x = [-99999,-99999,-99999,-99999]
 previous_touch_y = [-99999,-99999,-99999,-99999]
-previous_touch_t = [0,0,0,0]
 
 
 
@@ -152,7 +151,6 @@ def capt():
                 touch_rect = pygame.Rect(touch_x - v_touch_radius, touch_y - v_touch_radius, 
                                         v_touch_radius * 2, v_touch_radius * 2)
                 jd_collision_rect.append(touch_rect)
-                jd_collision_c.append((255,0,0,50))        
 
                 if touch_rect.colliderect(j_chao_rect[0]):
                     if not previous_touch_x[i] == -99999:
@@ -164,15 +162,20 @@ def capt():
                             j_mult += 0.25
                             a_vel += 200
                             j_chao_vel_y[0] += (touch_y - previous_touch_y[i]) * v_hitmultiplier * j_mult
+                
+                
+                if previous_touch_x[i] == -99999:
+                    jd_collision_c.append((255,0,255,50))
+                elif abs(touch_x - previous_touch_x[i]) > v_minspeed2hit or abs(touch_y - previous_touch_y[i]) > v_minspeed2hit:
+                    jd_collision_c.append((0,0,255,50))
+                else:
+                    jd_collision_c.append((255,0,0,50))
 
                 previous_touch_x[i] = touch_x
                 previous_touch_y[i] = touch_y
-                previous_touch_t[i] = 0
             else:
-                previous_touch_t[i] += 1
-                if previous_touch_t[i] > 4:
-                    previous_touch_x[i] = -99999
-                    previous_touch_y[i] = -99999
+                previous_touch_x[i] = -99999
+                previous_touch_y[i] = -99999
     else:
         for i in range(4):
             previous_touch_x[i] = -99999
