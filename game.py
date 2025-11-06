@@ -42,10 +42,10 @@ except pygame.error as e:
 # --- Valores predeterminados (v de valor) ---
 v_chao_hitsize_x = 80
 v_chao_hitsize_y = 80
-v_friction = 40
-v_minspeed2hit = 10
-v_hitmultiplier = 0.5
-v_slowdown = 0.8
+v_friction = 20
+v_minspeed2hit = 20
+v_hitmultiplier = 0.1
+v_slowdown = 0.7
 v_touch_radius = 80
 
 # --- Elementos del juego (j de juego) (d de debug) ---
@@ -92,12 +92,13 @@ c_mp_hands = mp.solutions.hands
 c_mp_drawing = mp.solutions.drawing_utils
 r_hands = c_mp_hands.Hands(
     static_image_mode=False,
-    max_num_hands=2,
+    max_num_hands=4,
     min_detection_confidence=0.7,
-    min_tracking_confidence=0.5
+    min_tracking_confidence=0.2
 )
-previous_touch_x = 25
-previous_touch_y = 25
+previous_touch_x = [-99999,-99999,-99999,-99999]
+previous_touch_y = [-99999,-99999,-99999,-99999]
+previous_touch_t = [0,0,0,0]
 
 
 
@@ -108,8 +109,8 @@ def CAPT_convertir2pos(mano):
     global c_mp_hands
     global c_cv_cap_w
     global c_cv_cap_h
-    x = mano.landmark[c_mp_hands.HandLandmark.INDEX_FINGER_TIP].x
-    y = mano.landmark[c_mp_hands.HandLandmark.INDEX_FINGER_TIP].y
+    x = mano.landmark[9].x
+    y = mano.landmark[9].y
     avg_x = int(x * c_cv_cap_w)
     avg_y = int(y * c_cv_cap_h)
     return avg_x, avg_y
@@ -139,33 +140,43 @@ def capt():
     cv_image = cv2.flip(c_cv_image, 1) # Volteo para consistencia de coordenadas
     cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
     results = r_hands.process(cv_image)
+    h = results.multi_hand_landmarks
 
-    if results.multi_hand_landmarks:
+    if h:
         # Obtener la posición de la punta del dedo índice en la vista de la cámara (para dibujar el toque)
-        touch_x, touch_y = CAPT_convertir2pos(results.multi_hand_landmarks[0])
-        
-        
-        touch_rect = pygame.Rect(touch_x - v_touch_radius, touch_y - v_touch_radius, 
-                                 v_touch_radius * 2, v_touch_radius * 2)
-        jd_collision_rect.append(touch_rect)
-        jd_collision_c.append((255,0,0,50))        
+        for i in range(4):
+            if i < len(h):
+                touch_x, touch_y = CAPT_convertir2pos(h[i])
+                
+                
+                touch_rect = pygame.Rect(touch_x - v_touch_radius, touch_y - v_touch_radius, 
+                                        v_touch_radius * 2, v_touch_radius * 2)
+                jd_collision_rect.append(touch_rect)
+                jd_collision_c.append((255,0,0,50))        
 
-        if touch_rect.colliderect(j_chao_rect[0]):
-            if not previous_touch_x == -99999:
-                if abs(touch_x - previous_touch_x) > v_minspeed2hit:
-                    j_mult += 0.25
-                    a_vel += 200
-                    j_chao_vel_x[0] += (touch_x - previous_touch_x) * v_hitmultiplier * j_mult
-                if abs(touch_y - previous_touch_y) > v_minspeed2hit:
-                    j_mult += 0.25
-                    a_vel += 200
-                    j_chao_vel_y[0] += (touch_y - previous_touch_y) * v_hitmultiplier * j_mult
+                if touch_rect.colliderect(j_chao_rect[0]):
+                    if not previous_touch_x[i] == -99999:
+                        if abs(touch_x - previous_touch_x[i]) > v_minspeed2hit:
+                            j_mult += 0.25
+                            a_vel += 200
+                            j_chao_vel_x[0] += (touch_x - previous_touch_x[i]) * v_hitmultiplier * j_mult
+                        if abs(touch_y - previous_touch_y[i]) > v_minspeed2hit:
+                            j_mult += 0.25
+                            a_vel += 200
+                            j_chao_vel_y[0] += (touch_y - previous_touch_y[i]) * v_hitmultiplier * j_mult
 
-        previous_touch_x = touch_x
-        previous_touch_y = touch_y
+                previous_touch_x[i] = touch_x
+                previous_touch_y[i] = touch_y
+                previous_touch_t[i] = 0
+            else:
+                previous_touch_t[i] += 1
+                if previous_touch_t[i] > 4:
+                    previous_touch_x[i] = -99999
+                    previous_touch_y[i] = -99999
     else:
-        previous_touch_x = -99999
-        previous_touch_y = -99999
+        for i in range(4):
+            previous_touch_x[i] = -99999
+            previous_touch_y[i] = -99999
 
 
 
