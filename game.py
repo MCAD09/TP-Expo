@@ -90,7 +90,7 @@ a_vel = 80.0
 
 # --- Cámara de la compu (c de captura) (r de resultados) ---
 c_cv_cap = cv2.VideoCapture(0)
-c_cv_cap_w, c_cv_cap_h = m_screen_size_x,m_screen_gamehalf_y
+c_cv_cap_w, c_cv_cap_h = m_screen_size_x,m_screen_size_y
 c_cv_cap.set(cv2.CAP_PROP_FRAME_WIDTH, c_cv_cap_w)
 c_cv_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, c_cv_cap_h)
 c_cv_image = ""
@@ -201,7 +201,7 @@ def render ():
     # --- Fondo ---
     m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
 
-    if j_inttimer < 1 and False:
+    if j_inttimer < 1:
         # --- Cámara ---
         cv_image = cv2.flip(c_cv_image, 1)
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
@@ -222,7 +222,7 @@ def render ():
             pygame.draw.rect(m_screen,jd_collision_c[i],jd_collision_rect[i])
 
     # --- UI ---
-    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(j_mult),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
+    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(int(j_mult*4)),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
     m_screen.blit(pygame.font.Font(None,int(a_p1num)).render(str(j_p1),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*1-10))
     m_screen.blit(pygame.font.Font(None,int(a_p2num)).render(str(j_p2),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*4-10))
     a_p1num += (120 - a_p1num)/4
@@ -331,7 +331,8 @@ while m_running:
         
     # --- Despues del frame ---
     render()
-    jd_fps = int(1 / (m_clock.tick(30) / 1000))
+    m_clock.tick(30)
+    jd_fps = m_clock.get_fps()
 
     if j_inttimer > 0:
         j_inttimer -= 1
