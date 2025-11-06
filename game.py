@@ -199,9 +199,9 @@ def render ():
     global a_vel
 
     # --- Fondo ---
-    m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
+    #m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
 
-    if j_inttimer < 1:
+    if j_inttimer < 1 and False:
         # --- Cámara ---
         cv_image = cv2.flip(c_cv_image, 1)
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
@@ -222,14 +222,14 @@ def render ():
             pygame.draw.rect(m_screen,jd_collision_c[i],jd_collision_rect[i])
 
     # --- UI ---
-    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(int(j_mult*4)),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
+    """m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(int(j_mult*4)),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
     m_screen.blit(pygame.font.Font(None,int(a_p1num)).render(str(j_p1),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*1-10))
     m_screen.blit(pygame.font.Font(None,int(a_p2num)).render(str(j_p2),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*4-10))
     a_p1num += (120 - a_p1num)/4
     a_p2num += (120 - a_p2num)/4
     a_vel += (80 - a_vel)/1.4
     if j_inttimer > 0:
-        m_screen.blit(pygame.font.Font(None,400).render(str(int(j_inttimer/5)+1),0,(0,0,0)), (m_screen_size_x/2-60, m_screen_size_y/2-100))
+        m_screen.blit(pygame.font.Font(None,400).render(str(int(j_inttimer/5)+1),0,(0,0,0)), (m_screen_size_x/2-60, m_screen_size_y/2-100))"""
     m_screen.blit(pygame.font.Font(None,100).render(str(jd_fps),0,(0,255,0)), (0,0))
 
 
@@ -332,7 +332,7 @@ while m_running:
     # --- Despues del frame ---
     render()
     m_clock.tick(30)
-    jd_fps = m_clock.get_fps()
+    jd_fps = int(m_clock.get_fps())
 
     if j_inttimer > 0:
         j_inttimer -= 1
