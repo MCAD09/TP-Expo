@@ -58,6 +58,8 @@ j_chao_vel_y = [0.00]
 j_chao_sprite = ["pelota1"]
 j_chao_rect = [(0,0,0,0)]
 j_mult = 1
+j_p1 = 0
+j_p2 = 0
 jd_collision_rect = []
 jd_collision_c = [] #color
 jd_enable_hitboxes = False
@@ -74,6 +76,11 @@ def reset():
     j_chao_vel_x = [0.00]
     j_chao_vel_y = [0.00]
     j_mult = 1
+
+# --- Animaciones ---
+a_p1num = 120.0
+a_p2num = 120.0
+a_vel = 80.0
 
 # --- Cámara de la compu (c de captura) (r de resultados) ---
 c_cv_cap = cv2.VideoCapture(0)
@@ -120,6 +127,7 @@ def capt():
     global jd_collision_c
     global previous_touch_x
     global previous_touch_y
+    global a_vel
 
     jd_collision_rect.clear()
     jd_collision_c.clear()
@@ -143,11 +151,14 @@ def capt():
         jd_collision_c.append((255,0,0,50))        
 
         if touch_rect.colliderect(j_chao_rect[0]):
-            j_mult += 0.5
             if not previous_touch_x == -99999:
                 if abs(touch_x - previous_touch_x) > v_minspeed2hit:
+                    j_mult += 0.25
+                    a_vel += 200
                     j_chao_vel_x[0] += (touch_x - previous_touch_x) * v_hitmultiplier * j_mult
                 if abs(touch_y - previous_touch_y) > v_minspeed2hit:
+                    j_mult += 0.25
+                    a_vel += 200
                     j_chao_vel_y[0] += (touch_y - previous_touch_y) * v_hitmultiplier * j_mult
 
         previous_touch_x = touch_x
@@ -163,6 +174,9 @@ def capt():
 ##########################
 def render ():
     global m_screen
+    global a_p1num
+    global a_p2num
+    global a_vel
 
     # --- Fondo ---
     m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
@@ -186,6 +200,15 @@ def render ():
         for i in range(len(jd_collision_rect)):
             pygame.draw.rect(m_screen,jd_collision_c[i],jd_collision_rect[i])
 
+    # --- UI ---
+    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(j_mult),1,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
+    m_screen.blit(pygame.font.Font(None,int(a_p1num)).render(str(j_p1),1,(0,0,0)), (m_screen_size_x/2, m_screen_size_y/5*1))
+    m_screen.blit(pygame.font.Font(None,int(a_p2num)).render(str(j_p2),1,(0,0,0)), (m_screen_size_x/2, m_screen_size_y/5*4))
+    a_p1num += (120 - a_p1num)/1.4
+    a_p2num += (120 - a_p2num)/1.4
+    a_vel += (80 - a_vel)/1.4
+
+
     pygame.display.flip()
 
 
@@ -201,9 +224,13 @@ def chao_logic():
     global j_chao_vel_x
     global j_chao_vel_y
     global j_chao_rect
+    global j_p1
+    global j_p2
+    global a_p1num
+    global a_p2num
 
-    arco1 = pygame.Rect(383,0,315,12)
-    arco2 = pygame.Rect(383,1920-12,315,12)
+    arco1 = pygame.Rect(383,0,315,24)
+    arco2 = pygame.Rect(383,1920-24,315,24)
     jd_collision_rect.append(arco1)
     jd_collision_c.append((255,0,255,50))
     jd_collision_rect.append(arco2)
@@ -225,16 +252,28 @@ def chao_logic():
 
 
         # --- Revisar si entro al arco ---
-        if arco1.colliderect(j_chao_rect[i]) or arco2.colliderect(j_chao_rect[i]):
+        if arco1.colliderect(j_chao_rect[i]):
+            j_p2 += 1
+            a_p2num += 200
+            reset()
+        if arco2.colliderect(j_chao_rect[i]):
+            j_p1 += 1
+            a_p1num += 200
             reset()
 
         # --- Rebotar con los bordes ---
         if j_chao_pos_x[i] < 0 or j_chao_pos_x[i] > m_screen_size_x-v_chao_hitsize_x:
-            j_chao_pos_x[i] -= j_chao_vel_x[i]
+            if j_chao_pos_x[i] < 50:
+                j_chao_pos_x[i] = 0
+            else:
+                j_chao_pos_x[i] = m_screen_size_x-v_chao_hitsize_x
             j_chao_vel_x[i] *= -1
             j_chao_vel_x[i] *= v_slowdown
         if j_chao_pos_y[i] < 24 or j_chao_pos_y[i] > m_screen_size_y-v_chao_hitsize_y-24:
-            j_chao_pos_y[i] -= j_chao_vel_y[i]
+            if j_chao_pos_y[i] < 50:
+                j_chao_pos_y[i] = 24
+            else:
+                j_chao_pos_y[i] = m_screen_size_y-v_chao_hitsize_y-24
             j_chao_vel_y[i] *= -1
             j_chao_vel_y[i] *= v_slowdown
 
