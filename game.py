@@ -44,7 +44,11 @@ try:
         "pasto" : pygame.image.load(rpath('fondo.png')).convert_alpha(),
         "pelota1" : pygame.image.load(rpath('pelota1_v2.png')).convert_alpha(),
         "pelota2" : pygame.image.load(rpath('pelota2_v2.png')).convert_alpha(),
-        "star" : pygame.image.load(rpath('estrellita.png')).convert_alpha()
+        "star" : pygame.image.load(rpath('estrellita.png')).convert_alpha(),
+        "star2" : pygame.image.load(rpath('estrellitabrilla.png')).convert_alpha(),
+        "fuego1" : pygame.image.load(rpath('fuego1.png')).convert_alpha(),
+        "fuego2" : pygame.image.load(rpath('fuego2.png')).convert_alpha(),
+        "fuego3" : pygame.image.load(rpath('fuego3.png')).convert_alpha()
     }
 except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
@@ -66,6 +70,7 @@ j_chao_pos_x = [(m_screen_size_x-v_chao_hitsize_x)/2]
 j_chao_pos_y = [(m_screen_size_y-v_chao_hitsize_y)/2]
 j_star_pos_x = [[],[],[],[]]
 j_star_pos_y = [[],[],[],[]]
+j_star_sprite = ["star","star","star","star"]
 j_chao_vel_x = [0.00]
 j_chao_vel_y = [0.00]
 j_chao_sprite = ["pelota1"]
@@ -100,6 +105,7 @@ def reset():
 a_p1num = 120.0
 a_p2num = 120.0
 a_vel = 80.0
+a_fire = 1
 
 # --- Cámara de la compu (c de captura) (r de resultados) ---
 c_cv_cap = cv2.VideoCapture(0)
@@ -140,6 +146,8 @@ def capt():
     global j_chao_sprite
     global j_chao_vel_x
     global j_chao_vel_y
+    global j_star_pos_x
+    global j_star_pos_y
     global j_mult
     global m_sprites
     global jd_collision_rect
@@ -168,6 +176,15 @@ def capt():
                 
                 j_star_pos_x[i].append(touch_x)
                 j_star_pos_y[i].append(touch_y)
+                if (abs(touch_x - previous_touch_x[i]) > v_minspeed2hit or abs(touch_y - previous_touch_y[i]) > v_minspeed2hit) and not previous_touch_x[i] == -99999:
+                    j_star_sprite[i] = "star2"
+                else:
+                    j_star_sprite[i] = "star"
+
+                while len(j_star_pos_x[i]) > 5:
+                    j_star_pos_x[i].pop(0)
+                    j_star_pos_y[i].pop(0)
+
                 touch_rect = pygame.Rect(touch_x - v_touch_radius, touch_y - v_touch_radius, 
                                         v_touch_radius * 2, v_touch_radius * 2)
                 jd_collision_rect.append(touch_rect)
@@ -176,11 +193,11 @@ def capt():
                     if not previous_touch_x[i] == -99999:
                         if abs(touch_x - previous_touch_x[i]) > v_minspeed2hit:
                             j_mult += 0.1
-                            a_vel += 200
+                            a_vel += 20
                             j_chao_vel_x[0] += (touch_x - previous_touch_x[i]) * v_hitmultiplier * j_mult
                         if abs(touch_y - previous_touch_y[i]) > v_minspeed2hit:
                             j_mult += 0.1
-                            a_vel += 200
+                            a_vel += 20
                             j_chao_vel_y[0] += (touch_y - previous_touch_y[i]) * v_hitmultiplier * j_mult
                 
                 
@@ -196,8 +213,12 @@ def capt():
             else:
                 previous_touch_x[i] = -99999
                 previous_touch_y[i] = -99999
+                j_star_pos_x[i].clear()
+                j_star_pos_y[i].clear()
     else:
         for i in range(4):
+            j_star_pos_x[i].clear()
+            j_star_pos_y[i].clear()
             previous_touch_x[i] = -99999
             previous_touch_y[i] = -99999
 
@@ -211,6 +232,7 @@ def render ():
     global a_p1num
     global a_p2num
     global a_vel
+    global a_fire
     global j_star_pos_x
     global j_star_pos_y
 
@@ -231,15 +253,17 @@ def render ():
     for i in range(len(j_chao_pos_x)):
         if jd_enable_hitboxes:
             pygame.draw.rect(m_screen,(0,0,255,50),j_chao_rect[i])
+        if j_mult > 5:
+            a_fire += 0.3
+            if a_fire > 3.9:
+                a_fire = 1
+            m_screen.blit(m_sprites["fuego"+str(math.floor(a_fire))], (j_chao_pos_x[i] - j_cam_x - 20,j_chao_pos_y[i] - j_cam_y - 36))
         m_screen.blit(m_sprites[j_chao_sprite[i]], (j_chao_pos_x[i] - j_cam_x,j_chao_pos_y[i] - j_cam_y))
 
     # --- Stars ---
     for j in range(4):
         for i in range(len(j_star_pos_x[j])):
-            while len(j_star_pos_x[j]) > 5:
-                j_star_pos_x[j].pop(0)
-                j_star_pos_y[j].pop(0)
-            m_screen.blit(m_sprites["star"], (j_star_pos_x[j][i] - j_cam_x , j_star_pos_y[j][i] - j_cam_y))
+            m_screen.blit(m_sprites[j_star_sprite[j]], (j_star_pos_x[j][i] - j_cam_x , j_star_pos_y[j][i] - j_cam_y))
 
 
 
@@ -248,15 +272,16 @@ def render ():
             pygame.draw.rect(m_screen,jd_collision_c[i],jd_collision_rect[i])
 
     # --- UI ---
-    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(int(j_mult*10)),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
+    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(int(j_mult*10-9)),0,(0,0,0)), (j_chao_pos_x[0]+27, j_chao_pos_y[0]+0))
     m_screen.blit(pygame.font.Font(None,int(a_p1num)).render(str(j_p1),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*1-10))
     m_screen.blit(pygame.font.Font(None,int(a_p2num)).render(str(j_p2),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*4-10))
     a_p1num += (120 - a_p1num)/4
     a_p2num += (120 - a_p2num)/4
-    a_vel += (80 - a_vel)/1.4
+    a_vel += (40 - a_vel)/1.4
     if j_inttimer > 0:
         m_screen.blit(pygame.font.Font(None,400).render(str(int(j_inttimer/5)+1),0,(0,0,0)), (m_screen_size_x/2-60, m_screen_size_y/2-100))
-    m_screen.blit(pygame.font.Font(None,100).render(str(jd_fps),0,(0,255,0)), (0,0))
+    if jd_enable_hitboxes:
+        m_screen.blit(pygame.font.Font(None,100).render(str(jd_fps),0,(0,255,0)), (0,0))
 
 
     pygame.display.flip()
@@ -312,11 +337,11 @@ def chao_logic():
             reset()
 
         # --- Rebotar con los bordes ---
-        if j_chao_pos_x[i] < 0 or j_chao_pos_x[i] > m_screen_size_x-v_chao_hitsize_x:
+        if j_chao_pos_x[i] < 8 or j_chao_pos_x[i] > m_screen_size_x-v_chao_hitsize_x-8:
             if j_chao_pos_x[i] < 50:
-                j_chao_pos_x[i] = 0
+                j_chao_pos_x[i] = 8
             else:
-                j_chao_pos_x[i] = m_screen_size_x-v_chao_hitsize_x
+                j_chao_pos_x[i] = m_screen_size_x-v_chao_hitsize_x-8
             j_chao_vel_x[i] *= -1
             j_chao_vel_x[i] *= v_slowdown
         if j_chao_pos_y[i] < 8 or j_chao_pos_y[i] > m_screen_size_y-v_chao_hitsize_y-8:
