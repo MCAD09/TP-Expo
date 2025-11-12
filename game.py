@@ -16,9 +16,19 @@
 #####################################
 import pygame
 import os
+import sys
 import cv2
 import math
 import mediapipe as mp
+
+def rpath(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, 'sprites', relative_path)
+
 
 # --- Configura el motor (m de motor) ---
 pygame.init()
@@ -31,9 +41,9 @@ m_running = True
 m_clock = pygame.time.Clock()
 try:
     m_sprites = { # Carga los sprites a la memoria
-        "pasto" : pygame.image.load(os.path.join('sprites', 'fondo.png')).convert_alpha(),
-        "pelota1" : pygame.image.load(os.path.join('sprites', 'pelota1.png')).convert_alpha(),
-        "pelota2" : pygame.image.load(os.path.join('sprites', 'pelota2.png')).convert_alpha()
+        "pasto" : pygame.image.load(rpath('fondo.png')).convert_alpha(),
+        "pelota1" : pygame.image.load(rpath('pelota1.png')).convert_alpha(),
+        "pelota2" : pygame.image.load(rpath('pelota2.png')).convert_alpha()
     }
 except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
