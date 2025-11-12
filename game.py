@@ -42,27 +42,30 @@ m_clock = pygame.time.Clock()
 try:
     m_sprites = { # Carga los sprites a la memoria
         "pasto" : pygame.image.load(rpath('fondo.png')).convert_alpha(),
-        "pelota1" : pygame.image.load(rpath('pelota1.png')).convert_alpha(),
-        "pelota2" : pygame.image.load(rpath('pelota2.png')).convert_alpha()
+        "pelota1" : pygame.image.load(rpath('pelota1_v2.png')).convert_alpha(),
+        "pelota2" : pygame.image.load(rpath('pelota2_v2.png')).convert_alpha(),
+        "star" : pygame.image.load(rpath('estrellita.png')).convert_alpha()
     }
 except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
     pygame.quit()
 
 # --- Valores predeterminados (v de valor) ---
-v_chao_hitsize_x = 80
-v_chao_hitsize_y = 80
-v_friction = 10
-v_minspeed2hit = 40
-v_hitmultiplier = 0.2
+v_chao_hitsize_x = 27
+v_chao_hitsize_y = 27
+v_friction = 30
+v_minspeed2hit = 12
+v_hitmultiplier = 0.12
 v_slowdown = 0.7
-v_touch_radius = 80
+v_touch_radius = 27
 
 # --- Elementos del juego (j de juego) (d de debug) ---
 j_cam_x = 0.00
 j_cam_y = 0.00
 j_chao_pos_x = [(m_screen_size_x-v_chao_hitsize_x)/2]
 j_chao_pos_y = [(m_screen_size_y-v_chao_hitsize_y)/2]
+j_star_pos_x = [[],[],[],[]]
+j_star_pos_y = [[],[],[],[]]
 j_chao_vel_x = [0.00]
 j_chao_vel_y = [0.00]
 j_chao_sprite = ["pelota1"]
@@ -163,7 +166,8 @@ def capt():
             if i < len(h):
                 touch_x, touch_y = CAPT_convertir2pos(h[i])
                 
-                
+                j_star_pos_x[i].append(touch_x)
+                j_star_pos_y[i].append(touch_y)
                 touch_rect = pygame.Rect(touch_x - v_touch_radius, touch_y - v_touch_radius, 
                                         v_touch_radius * 2, v_touch_radius * 2)
                 jd_collision_rect.append(touch_rect)
@@ -171,11 +175,11 @@ def capt():
                 if touch_rect.colliderect(j_chao_rect[0]):
                     if not previous_touch_x[i] == -99999:
                         if abs(touch_x - previous_touch_x[i]) > v_minspeed2hit:
-                            j_mult += 0.25
+                            j_mult += 0.1
                             a_vel += 200
                             j_chao_vel_x[0] += (touch_x - previous_touch_x[i]) * v_hitmultiplier * j_mult
                         if abs(touch_y - previous_touch_y[i]) > v_minspeed2hit:
-                            j_mult += 0.25
+                            j_mult += 0.1
                             a_vel += 200
                             j_chao_vel_y[0] += (touch_y - previous_touch_y[i]) * v_hitmultiplier * j_mult
                 
@@ -207,11 +211,13 @@ def render ():
     global a_p1num
     global a_p2num
     global a_vel
+    global j_star_pos_x
+    global j_star_pos_y
 
     # --- Fondo ---
-    #m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
+    m_screen.blit(m_sprites["pasto"], (-j_cam_x, -j_cam_y))
 
-    if j_inttimer < 1 and False:
+    if j_inttimer < 1:
         # --- Cámara ---
         cv_image = cv2.flip(c_cv_image, 1)
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
@@ -221,25 +227,35 @@ def render ():
         cv_image.set_alpha(20)
         m_screen.blit(cv_image, (0, 0))
 
-    # --- Chaos ---
+    # --- Pelota ---
     for i in range(len(j_chao_pos_x)):
         if jd_enable_hitboxes:
             pygame.draw.rect(m_screen,(0,0,255,50),j_chao_rect[i])
         m_screen.blit(m_sprites[j_chao_sprite[i]], (j_chao_pos_x[i] - j_cam_x,j_chao_pos_y[i] - j_cam_y))
+
+    # --- Stars ---
+    for j in range(4):
+        for i in range(len(j_star_pos_x[j])):
+            while len(j_star_pos_x[j]) > 5:
+                j_star_pos_x[j].pop(0)
+                j_star_pos_y[j].pop(0)
+            m_screen.blit(m_sprites["star"], (j_star_pos_x[j][i] - j_cam_x , j_star_pos_y[j][i] - j_cam_y))
+
+
 
     if jd_enable_hitboxes:
         for i in range(len(jd_collision_rect)):
             pygame.draw.rect(m_screen,jd_collision_c[i],jd_collision_rect[i])
 
     # --- UI ---
-    """m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(int(j_mult*4)),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
+    m_screen.blit(pygame.font.Font(None,int(a_vel)).render(str(int(j_mult*10)),0,(0,0,0)), (j_chao_pos_x[0]+80, j_chao_pos_y[0]+15))
     m_screen.blit(pygame.font.Font(None,int(a_p1num)).render(str(j_p1),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*1-10))
     m_screen.blit(pygame.font.Font(None,int(a_p2num)).render(str(j_p2),0,(0,0,0)), (m_screen_size_x/2-20, m_screen_size_y/5*4-10))
     a_p1num += (120 - a_p1num)/4
     a_p2num += (120 - a_p2num)/4
     a_vel += (80 - a_vel)/1.4
     if j_inttimer > 0:
-        m_screen.blit(pygame.font.Font(None,400).render(str(int(j_inttimer/5)+1),0,(0,0,0)), (m_screen_size_x/2-60, m_screen_size_y/2-100))"""
+        m_screen.blit(pygame.font.Font(None,400).render(str(int(j_inttimer/5)+1),0,(0,0,0)), (m_screen_size_x/2-60, m_screen_size_y/2-100))
     m_screen.blit(pygame.font.Font(None,100).render(str(jd_fps),0,(0,255,0)), (0,0))
 
 
@@ -263,8 +279,8 @@ def chao_logic():
     global a_p1num
     global a_p2num
 
-    arco1 = pygame.Rect(420,0,260,24)
-    arco2 = pygame.Rect(420,1896,260,24)
+    arco1 = pygame.Rect(137,0,87,8)
+    arco2 = pygame.Rect(137,632,87,8)
     jd_collision_rect.append(arco1)
     jd_collision_c.append((255,0,255,50))
     jd_collision_rect.append(arco2)
@@ -303,11 +319,11 @@ def chao_logic():
                 j_chao_pos_x[i] = m_screen_size_x-v_chao_hitsize_x
             j_chao_vel_x[i] *= -1
             j_chao_vel_x[i] *= v_slowdown
-        if j_chao_pos_y[i] < 24 or j_chao_pos_y[i] > m_screen_size_y-v_chao_hitsize_y-24:
+        if j_chao_pos_y[i] < 8 or j_chao_pos_y[i] > m_screen_size_y-v_chao_hitsize_y-8:
             if j_chao_pos_y[i] < 50:
-                j_chao_pos_y[i] = 24
+                j_chao_pos_y[i] = 8
             else:
-                j_chao_pos_y[i] = m_screen_size_y-v_chao_hitsize_y-24
+                j_chao_pos_y[i] = m_screen_size_y-v_chao_hitsize_y-8
             j_chao_vel_y[i] *= -1
             j_chao_vel_y[i] *= v_slowdown
 
