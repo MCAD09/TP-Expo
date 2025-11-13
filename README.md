@@ -3,7 +3,7 @@ Jueguito para la expo de la Indu 4.
 ## ¿Cómo usar?
 *(Ejecutar estos comandos **UNO POR UNO**, esperando a que acabe el primero para ejecutar el siguiente)*
 ### Al abrir el proyecto
-Una vez configurado ([ver abajo](https://github.com/MCAD09/TP-Expo/edit/main/README.md#configurar-todo-por-primera-vez)), recordar siempre ejecutar este comando al abrir una terminal e intentar ejecutar el juego
+Una vez configurado ([ver abajo](#configurar-todo-por-primera-vez)), recordar siempre ejecutar este comando al abrir una terminal e intentar ejecutar el juego
 (asegurate que la carperta que se señala en la terminal es la misma que la del proyecto):
 ```
 .\venv310\Scripts\activate
