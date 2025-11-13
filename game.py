@@ -48,7 +48,9 @@ try:
         "star2" : pygame.image.load(rpath('estrellitabrilla.png')).convert_alpha(),
         "fuego1" : pygame.image.load(rpath('fuego1.png')).convert_alpha(),
         "fuego2" : pygame.image.load(rpath('fuego2.png')).convert_alpha(),
-        "fuego3" : pygame.image.load(rpath('fuego3.png')).convert_alpha()
+        "fuego3" : pygame.image.load(rpath('fuego3.png')).convert_alpha(),
+        "won1" : pygame.image.load(rpath('jugador1.png')).convert_alpha(),
+        "won2" : pygame.image.load(rpath('jugador2.png')).convert_alpha()
     }
 except pygame.error as e:
     print(f"Error al cargar la imagen: {e}")
@@ -89,6 +91,9 @@ def reset():
     global j_chao_pos_y
     global j_chao_vel_x
     global j_chao_vel_y
+    global j_star_pos_x
+    global j_star_pos_y
+    global j_star_sprite
     global j_mult
     global j_inttimer
 
@@ -97,7 +102,10 @@ def reset():
     j_chao_vel_x = [0.00]
     j_chao_vel_y = [0.00]
     j_mult = 1
-    j_inttimer = 30
+    j_inttimer = 15
+    j_star_pos_x = [[],[],[],[]]
+    j_star_pos_y = [[],[],[],[]]
+    j_star_sprite = ["star","star","star","star"]
 
 
 
@@ -186,7 +194,7 @@ def capt():
                     j_star_pos_y[i].pop(0)
 
                 touch_rect = pygame.Rect(touch_x - v_touch_radius, touch_y - v_touch_radius, 
-                                        v_touch_radius * 2, v_touch_radius * 2)
+                                         v_touch_radius * 2, v_touch_radius * 2)
                 jd_collision_rect.append(touch_rect)
 
                 if touch_rect.colliderect(j_chao_rect[0]):
@@ -288,6 +296,11 @@ def render ():
 
 
 
+
+
+
+
+
 ###################################
 ####### LÓGICA DE LOS CHAOS #######
 ###################################
@@ -304,8 +317,8 @@ def chao_logic():
     global a_p1num
     global a_p2num
 
-    arco1 = pygame.Rect(137,0,87,8)
-    arco2 = pygame.Rect(137,632,87,8)
+    arco1 = pygame.Rect(140,0,80,8)
+    arco2 = pygame.Rect(140,632,80,8)
     jd_collision_rect.append(arco1)
     jd_collision_c.append((255,0,255,50))
     jd_collision_rect.append(arco2)
@@ -359,34 +372,91 @@ def chao_logic():
                           v_chao_hitsize_x,v_chao_hitsize_y)
     
 
+
+
+
+
+#################################
+####### SE ACABO EL JUEGO #######
+#################################
+def game_finished():
+    global jd_enable_hitboxes
+    global j_p1
+    global j_p2
+    global m_running
+    global a_p1num
+    global a_p2num
+    global a_vel
+    global j_inttimer
+
+    game_over = True
+    jd_enable_hitboxes = False
+    while m_running and game_over:
+        if j_p1 < 5:
+            m_screen.blit(m_sprites["won1"], (0,0))
+        else:
+            m_screen.blit(m_sprites["won2"], (0,0))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                m_running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    m_running = False
+        b1, b2, b3 = pygame.mouse.get_pressed()
+        if b1:
+            j_p1 = 0
+            j_p2 = 0
+            a_p1num = 120.0
+            a_p2num = 120.0
+            a_vel = 80.0
+            px,py = pygame.mouse.get_pos()
+            if py < 426:
+                m_running = False
+            else:
+                reset()
+                render()
+                game_over = False
+        
+        pygame.display.flip()
+        m_clock.tick(30)
+
+
+
+
+
 ####################
 ####### MAIN #######
 ####################
 while m_running:
-    # --- Revisa si el juego debería cerrarse ---
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            m_running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+    if j_p1 < 6 and j_p2 < 6:
+        # --- Revisa si el juego debería cerrarse ---
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 m_running = False
-            if event.key == pygame.K_z:
-                jd_enable_hitboxes = not jd_enable_hitboxes
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    m_running = False
+                if event.key == pygame.K_z:
+                    jd_enable_hitboxes = not jd_enable_hitboxes
 
-    if j_inttimer < 1:
-        # --- Antes del frame ---
-        capt()
+        if j_inttimer < 1:
+            # --- Antes del frame ---
+            capt()
 
-        # --- Loop de juego ---
-        chao_logic()
-        
-    # --- Despues del frame ---
-    render()
-    m_clock.tick(30)
-    jd_fps = int(m_clock.get_fps())
+            # --- Loop de juego ---
+            chao_logic()
+            
+        # --- Despues del frame ---
+        render()
+        m_clock.tick(30)
+        jd_fps = int(m_clock.get_fps())
 
-    if j_inttimer > 0:
-        j_inttimer -= 1
+        if j_inttimer > 0:
+            j_inttimer -= 1
+
+    else:
+        game_finished()
     
 
 
