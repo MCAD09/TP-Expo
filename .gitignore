@@ -3,3 +3,6 @@ venv310/
 **.kra~
 **.log
 __pycache__
+sounds/
+.ejemplos/
+sprites/chao/
