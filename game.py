@@ -137,20 +137,13 @@ previous_touch_y = [-99999,-99999,-99999,-99999]
 ###############################
 ####### CAPTURAR IMÁGEN #######
 ###############################
-def CAPT_convertir2pos(mano):
-    global c_mp_hands
-    global c_cv_cap_w
-    global c_cv_cap_h
-    x = mano.landmark[9].x
-    y = mano.landmark[9].y
-    avg_x = int(x * c_cv_cap_w)
-    avg_y = int(y * c_cv_cap_h)
-    return avg_x, avg_y
-
 def capt():
     global m_running
     global c_cv_cap
     global c_cv_image
+    global c_mp_hands
+    global c_cv_cap_w
+    global c_cv_cap_h
     global j_chao_sprite
     global j_chao_vel_x
     global j_chao_vel_y
@@ -180,7 +173,10 @@ def capt():
         # Obtener la posición de la punta del dedo índice en la vista de la cámara (para dibujar el toque)
         for i in range(4):
             if i < len(h):
-                touch_x, touch_y = CAPT_convertir2pos(h[i])
+                mp_x = h[i].landmark[9].x
+                mp_y = h[i].landmark[9].y
+                touch_x = int(mp_x * c_cv_cap_w)
+                touch_y = int(mp_y * c_cv_cap_h)
                 
                 j_star_pos_x[i].append(touch_x)
                 j_star_pos_y[i].append(touch_y)
