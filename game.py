@@ -24,10 +24,12 @@ import mediapipe as mp
 def rpath(relative_path):
     try:
         base_path = sys._MEIPASS
+        return os.path.join(base_path, relative_path)
     except Exception:
         base_path = os.path.abspath(".")
+        return os.path.join(base_path, 'sprites', relative_path)
 
-    return os.path.join(base_path, 'sprites', relative_path)
+    
 
 
 # --- Configura el motor (m de motor) ---
